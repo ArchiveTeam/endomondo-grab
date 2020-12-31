@@ -44,7 +44,10 @@ end
 
 allowed = function(url, parenturl)
   if string.match(urlparse.unescape(url), "[<>\\%*%$%^%[%],%(%){}]")
-    or string.match(url, "/login%?returnUrl=") then
+    or string.match(url, "/login%?returnUrl=")
+    or string.match(url, "^https?://[^/]+/stats/[0-9]+$")
+    or string.match(url, "^https?://[^/]+/routes/[0-9]+$")
+    or string.match(url, "^https?://[^/]+/users/[0-9]+/history$") then
     return false
   end
 
@@ -59,16 +62,19 @@ allowed = function(url, parenturl)
     tested[s] = tested[s] + 1
   end
 
-  if string.match(url, "^https?://[^/]*endomondo%.com/[^%?]*%?x=")
-    or string.match(url, "^https?://[^/]*endomondo%.com/resources/") then
+  if string.match(url, "^https?://[^/]*endomondo%.com/resources/gfx/") then
     return true
   end
 
-  for s in string.gmatch(url, "([0-9]+)") do
+  if string.match(url, "^https?://[^/]*endomondo%.com/profile/[0-9]+$") then
+    return true
+  end
+
+--[[  for s in string.gmatch(url, "([0-9]+)") do
     if ids[s] then
       return true
     end
-  end
+  end]]
 
   return false
 end
@@ -94,7 +100,12 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     url_ = string.match(url_, "^(.-)/?$")
     if (downloaded[url_] ~= true and addedtolist[url_] ~= true)
       and allowed(url_, origurl) then
-      table.insert(urls, { url=url_ })
+      table.insert(urls, {
+        url=url_,
+        headers={
+          ["User-Agent"]="Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0" .. tostring(math.random(100000))
+        }
+      })
       addedtolist[url_] = true
       addedtolist[url] = true
     end
